@@ -1,115 +1,79 @@
 #include "spread.h"
 
-int randomBetween(int lower, int upper) {
-    return (rand() % (upper - lower + 1) + lower);
+char randomCharBetween(int lower, int upper) {
+    return static_cast<char>((rand() % (upper - lower + 1) + lower));
 }
 
-int randomIterate(int prev, int lower, int upper, int tolerance) {
-    int next = randomBetween(lower, upper);
+char randomIterateChar(int prev, int lower, int upper, int tolerance) {
+    char next = randomCharBetween(lower, upper);
     while(abs(prev - next) > tolerance) {
-        next = randomBetween(lower, upper);
+        next = randomCharBetween(lower, upper);
     }
     return next;
-}
-
-int fixNumber(int num) {
-    switch(num) {
-    case(-78):
-        num = 178;
-        break;
-    case(-79):
-        num = 177;
-        break;
-    case(-80):
-        num = 176;
-        break;
-    default:
-        break;
-    }
-    return num;
 }
 
 spread::spread(unsigned int width, unsigned int height)
 {
     vector<char> newLine;
-
-    int nextTile = randomBetween(176, 178);
+    char nextTile = randomCharBetween(-80, -78);
 
     for(unsigned int i = 0; i < width; i++) {
-        newLine.push_back(static_cast<char>(nextTile));
-        nextTile = fixNumber(randomIterate(nextTile, 176, 178, 1));
+        newLine.push_back(nextTile);
+        nextTile = randomIterateChar(nextTile, -80, -78, 1);
     }
 
-    pixels[0] = newLine;
+    pixels.push_back(newLine);
     newLine.clear();
 
     for(unsigned int y = 1; y < height; y++) {
-        nextTile = fixNumber(randomIterate(fixNumber(pixels[y-1][0]), 176, 178, 1));
-        newLine.push_back(static_cast<char>(nextTile));
+        nextTile = randomIterateChar(pixels[y-1][0], -80, -78, 1);
+        newLine.push_back(nextTile);
 
         for(unsigned int x = 1; x < width; x++) {
-            switch(abs(pixels[y-1][x] - newLine[x])) {
+            switch(abs(pixels[y-1][x] - newLine[x-1])) {
             case(2):
-                nextTile = 177;
+                nextTile = -79;
                 break;
             case(1):
-                nextTile = randomBetween(fixNumber(min(newLine[x-1], pixels[y-1][x])))
-            }
-        }
-    }
-
-    for(unsigned int i = 1; i < height; i++) {
-        for(unsigned int i = 1; i < width; i++) {
-            switch(abs(fixNumber(string1[i - 1] - string0[i]))) {
-            case(2):
-                nextTile = 177;
-                break;
-            case(1):
-                nextTile = randomBetween(fixNumber(min(string1[i - 1], string0[i])), fixNumber(max(string1[i - 1], string0[i])));
+                nextTile = randomCharBetween(min(newLine[x-1], pixels[y-1][x]), max(newLine[x-1], pixels[y-1][x]));
                 break;
             case(0):
-                nextTile = fixNumber(randomIterate(fixNumber(string0[i]), 176, 178, 1));
-                break;
-            default:
+                nextTile = randomIterateChar(pixels[y-1][x], -78, -80, 1);
                 break;
             }
-            string1.push_back(static_cast<char>(nextTile));
+            newLine.push_back(nextTile);
         }
 
-        string1.append("\n");
-        masterString.append(string1);
-        string0 = string1;
-        string1.clear();
+        pixels.push_back(newLine);
+        newLine.clear();
     }
 }
 
-string randomPattern(unsigned int height, unsigned int width) {
-    string masterString;
-    string string0;
-    string string1;
+string spread::toString() {
+    string output;
+    for(unsigned int y = 0; y < pixels.size(); y++) {
+        for(unsigned int x = 0; x < pixels[y].size(); x++) {
+            output.push_back(pixels[y][x]);
+        }
+        output.append("\n");
+    }
+    return output;
+}
 
-    string masterUnsmoothed = masterString;
-    int I;
+char spread::at(unsigned int x, unsigned int y) {
+    return pixels[y][x];
+}
 
-    for(unsigned int i = 1; i < masterString.size(); i++) {
-        I = masterString[i];
-        if(i % (width + 1) >= 2) {
-            if(I == masterString[i + width] && I == masterString[i + width + 2] && I == masterString[i + 2 + (width * 2)] && masterString[i + width + 1] != I) {
-                masterString[i + width + 1] = static_cast<char>(fixNumber(masterString[i]));
-            }
-            if(I == masterString[i + 1] && I == masterString[i + width] && I == masterString[i + width + 3] && I == masterString[i + 2 + (width * 2)] && I == masterString[i + 3 + (width * 2)]) {
-                masterString[i + width + 1] = static_cast<char>(fixNumber(I));
-                masterString[i + width + 2] = static_cast<char>(fixNumber(I));
+void spread::set(unsigned int x, unsigned int y, char graph) {
+    pixels[y][x] = graph;
+}
+
+void spread::dilate() {
+    for(unsigned int y = 1; y < pixels.size() - 1; y++) {
+        for(unsigned int x = 1; x < pixels[y].size() - 1; x++) {
+            if(at(x, y-1) == at(x-1,y) == at(x+1, y) == at(x, y+1) != at(x, y)) {
+                set(x, y, at(x, y-1));
             }
         }
     }
-
-    masterString.append("Unsmoothed \n");
-    masterString.append(masterUnsmoothed);
-    masterUnsmoothed = "Smoothed \n"; //reusing variables, does not need to be masterUnsmoothed
-    masterUnsmoothed.append(masterString);
-    masterString = masterUnsmoothed;
-
-    return masterString;
 }
-

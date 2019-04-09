@@ -5,7 +5,8 @@ using namespace std;
 int main()
 {
     srand(static_cast<unsigned int>(time(nullptr)));
-    string masterString = randomPattern(200, 200);
-    cout << masterString << endl;
+    spread newSpread(5, 5);
+    //newSpread.dilate();
+    cout << newSpread.toString() << endl;
     return 0;
 }

@@ -10,6 +10,10 @@ class spread
 {
 public:
     spread(unsigned int width, unsigned int height);
+    string toString();
+    char at(unsigned int x, unsigned int y);
+    void set(unsigned int x, unsigned int y, char graph);
+    void dilate();
 
     vector<vector<char>> pixels;
 };
